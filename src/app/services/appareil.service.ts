@@ -1,26 +1,17 @@
-import { Subject } from "rxjs";
+import { Subject } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 
+@Injectable()
 export class AppareilService {
 
     appareilSubject = new Subject<any[]>();
 
-    private appareils: any [] = [ 
-        {
-            id: 1,
-            name: 'Machine à laver',
-            status: 'éteint'
-        },
-        {
-            id: 2,
-            name: 'Télévision',
-            status: 'allumé'
-        },
-        {
-            id: 3,
-            name: 'Ordinateur',
-            status: 'éteint'
-        },
-    ];
+    private appareils: any [] = [];
+
+    constructor(
+        private httpClient: HttpClient
+    ) {}
 
     // émet une copie du tableau appareils
     emitAppareilSubject() {
@@ -65,9 +56,36 @@ export class AppareilService {
 
         appareil.name = name;
         appareil.status = status;
-        appareil.id = this.appareils[this.appareils.length - 1].id + 1;
+        this.appareils.length ? appareil.id = this.appareils[this.appareils.length - 1].id + 1 : appareil.id = 1;
         
         this.appareils.push(appareil);
         this.emitAppareilSubject();
+    }
+
+    saveAppareilsToServer() {
+        this.httpClient
+        .put("https://http-client-demo-44c3a.firebaseio.com/appareils.json", this.appareils)
+        .subscribe(
+            () => {
+                console.log('Enregistrement terminé !');
+            },
+            (error) => {
+                console.log('Erreur de sauvegarde ! ' + error);
+            }
+        )
+    }
+
+    getAppareilsFromServer() {
+        this.httpClient
+            .get<any[]>("https://http-client-demo-44c3a.firebaseio.com/appareils.json")
+            .subscribe(
+                (response) => {
+                    this.appareils = response;
+                    this.emitAppareilSubject();
+                },
+                (error) => {
+                    console.log('Erreur de chargement ! ' + error);
+                }
+            );
     }
 }
